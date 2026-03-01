@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YEUU EMMM</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <div class="floaties" aria-hidden="true">
+      <span class="floaty floaty--heart">❤</span>
+      <span class="floaty floaty--heart">❤</span>
+      <span class="floaty floaty--heart">❤</span>
+      <span class="floaty floaty--bear">🧸</span>
+      <span class="floaty floaty--bear">🧸</span>
+    </div>
+
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand__title">Yêuu Emmm</div>
+          <div class="brand__subtitle">Nơi lưu kỷ niệm của hai đứa mình nàa</div>
+        </div>
+        <div class="topbar__right">
+          <button id="btnLock" class="btn btn--ghost" type="button">Khóa</button>
+        </div>
+      </header>
+
+      <section id="lock" class="card lock">
+        <div class="lock__heart">❤</div>
+        <h1 class="lock__title">Chào mừng bé yêu</h1>
+        <p class="lock__desc">Nhập mật khẩu để bước vào thế giới của tụi mình</p>
+
+        <form id="lockForm" class="lock__form" autocomplete="off">
+          <label class="field">
+            <span class="field__label">Mật khẩu</span>
+            <input id="passcode" class="input" type="password" inputmode="numeric" placeholder="" />
+          </label>
+
+          <button class="btn btn--primary" type="submit">Vào thôi</button>
+          <div id="lockError" class="error" aria-live="polite"></div>
+        </form>
+
+        <div class="hint">Gợi ý: ngày kỷ niệm theo định dạng <b>ddmmyyyy</b>.</div>
+      </section>
+
+      <section id="app" class="app hidden">
+        <section class="card hero">
+          <div class="hero__title">Tụi mình đã yêu nhau</div>
+          <div class="hero__counter">
+            <div class="hero__num" id="daysCount">—</div>
+            <div class="hero__unit">ngày</div>
+          </div>
+          <div class="hero__sub" id="ymdCount">—</div>
+        </section>
+
+        <nav class="tabs card">
+          <button class="tab is-active" data-tab="diary" type="button">Nhật ký</button>
+          <button class="tab" data-tab="album" type="button">Album</button>
+          <button class="tab" data-tab="messages" type="button">Tin nhắn</button>
+          <button class="tab" data-tab="checkin" type="button">Check-in & Shop</button>
+          <div class="tabs__spacer"></div>
+          <button id="btnSettings" class="btn btn--ghost" type="button">Cài đặt</button>
+        </nav>
+
+        <section class="grid">
+          <div class="card panel" data-panel="diary" hidden>
+            <div class="panel__header">
+              <h2>Nhật ký tình yêu</h2>
+              <div class="muted">Ghi lại kỷ niệm theo ngày tháng</div>
+            </div>
+
+            <div class="list" id="diaryList"></div>
+
+            <form id="diaryForm" class="stack" autocomplete="off">
+              <div class="row">
+                <label class="field">
+                  <span class="field__label">Ngày</span>
+                  <input id="diaryDate" class="input" type="date" required />
+                </label>
+                <label class="field" style="flex:1">
+                  <span class="field__label">Tiêu đề</span>
+                  <input id="diaryTitle" class="input" placeholder="VD: Lần đầu đi ăn cùng nhau" required />
+                </label>
+              </div>
+
+              <label class="field">
+                <span class="field__label">Nội dung</span>
+                <textarea id="diaryContent" class="textarea" rows="5" placeholder="Viết gì đó thật đáng yêu..." required></textarea>
+              </label>
+
+              <div class="row">
+                <button class="btn btn--primary" type="submit">Thêm nhật ký</button>
+                <div id="diaryStatus" class="status" aria-live="polite"></div>
+              </div>
+            </form>
+          </div>
+
+          <div class="card panel" data-panel="album" hidden>
+            <div class="panel__header">
+              <h2>Album ảnh</h2>
+              <div class="muted">Up ảnh của hai đứa lên đây</div>
+            </div>
+
+            <div class="gallery" id="photoGrid"></div>
+
+            <form id="photoForm" class="stack" autocomplete="off">
+              <div class="row">
+                <input id="photoFile" class="input" type="file" accept="image/*" required />
+                <button class="btn btn--primary" type="submit">Tải ảnh lên</button>
+              </div>
+              <label class="field">
+                <span class="field__label">Chú thích</span>
+                <input id="photoCaption" class="input" placeholder="VD: Hôm đó em đẹp lắm" />
+              </label>
+              <div id="photoStatus" class="status" aria-live="polite"></div>
+            </form>
+          </div>
+
+          <div class="card panel" data-panel="messages" hidden>
+            <div class="panel__header">
+              <h2>Tin nhắn iu thương</h2>
+              <div class="muted">Gửi tin nhắn một chiều (text / ảnh / voice)</div>
+            </div>
+
+            <div class="msg">
+              <div class="msg__composer">
+                <form id="msgTextForm" class="msg__block" autocomplete="off">
+                  <label class="field" style="min-width: 0; width:100%">
+                    <span class="field__label">Nội dung</span>
+                    <textarea id="msgText" class="textarea" rows="2" placeholder="Nhắn gì đó thật dễ thương..." required></textarea>
+                  </label>
+
+                  <div class="msg__actions">
+                    <button id="btnPickImage" class="btn btn--pill" type="button">Ảnh</button>
+                    <button id="btnRecord" class="btn btn--pill" type="button">Ghi âm</button>
+                    <button id="btnStop" class="btn btn--ghost btn--pill" type="button" disabled>Dừng</button>
+                    <button id="btnSendVoice" class="btn btn--ghost btn--pill" type="button" disabled>Gửi voice</button>
+                    <button class="btn btn--primary btn--pill" type="submit">Gửi</button>
+                  </div>
+
+                  <input id="msgImageFile" class="drop__input" type="file" accept="image/*" hidden />
+                  <audio id="previewAudio" controls class="audio" hidden></audio>
+                </form>
+
+                <div id="msgStatus" class="status" aria-live="polite"></div>
+              </div>
+
+              <div class="chat__list chat__list--pink" id="msgList" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="card panel" data-panel="checkin" hidden>
+            <div class="panel__header">
+              <h2>Check-in & Shop</h2>
+              <div class="muted">Check-in nhận điểm mỗi ngày, rồi đổi quà nè</div>
+            </div>
+
+            <div class="counter" style="margin-bottom: 10px;">
+              <div class="counter__big">
+                <div class="counter__num" id="pointsValue">0</div>
+                <div class="counter__label">điểm</div>
+              </div>
+              <div class="counter__small">
+                <div>Chu kỳ check-in: <b id="checkinDay">—</b>/7</div>
+                <div class="muted">Ngày 7: 1500 điểm</div>
+              </div>
+              <div style="margin-left:auto; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                <button id="btnCheckin" class="btn btn--primary" type="button">Check-in hôm nay</button>
+                <div id="checkinStatus" class="status" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="item">
+                <div class="item__top">
+                  <div>
+                    <div class="item__title">Shop quy đổi điểm</div>
+                    <div class="muted">Chọn số lượng rồi bấm Đổi quà đã chọn</div>
+                  </div>
+                  <button id="btnRedeemSelected" class="btn btn--primary" type="button">Đổi quà đã chọn</button>
+                </div>
+                <div class="shop" id="shopList"></div>
+                <div id="redeemStatus" class="status" aria-live="polite"></div>
+              </div>
+
+              <div class="item">
+                <div class="item__top">
+                  <div>
+                    <div class="item__title">Đang giao quà</div>
+                    <div class="muted">Lịch sử đổi quà (tên quà, ngày giờ đổi, điểm đã trừ)</div>
+                  </div>
+                </div>
+                <div class="list" id="redemptionList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <dialog id="settingsDialog" class="dialog">
+          <div class="card dialog__card">
+            <div class="dialog__top">
+              <div>
+                <div class="dialog__title">Cài đặt</div>
+                <div class="muted">Chỉ cần đặt một lần để bộ đếm hoạt động</div>
+              </div>
+              <button id="btnCloseSettings" class="btn btn--ghost" type="button">Đóng</button>
+            </div>
+
+            <div class="stack">
+              <form id="startDateForm" class="row" autocomplete="off">
+                <label class="field" style="flex:1">
+                  <span class="field__label">Ngày bắt đầu yêu</span>
+                  <input id="loveStart" class="input" type="date" />
+                </label>
+                <button class="btn btn--primary" type="submit">Lưu</button>
+              </form>
+              <div id="counterStatus" class="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog id="confirmDialog" class="dialog">
+          <div class="card dialog__card confirm">
+            <div class="dialog__top">
+              <div>
+                <div class="dialog__title" id="confirmTitle">Xác nhận</div>
+                <div class="muted" id="confirmDesc">Nhập mật khẩu để xác nhận thao tác</div>
+              </div>
+              <button id="btnCloseConfirm" class="btn btn--ghost" type="button">Đóng</button>
+            </div>
+
+            <form id="confirmForm" class="stack" autocomplete="off">
+              <label class="field">
+                <span class="field__label">Mật khẩu</span>
+                <input id="confirmPass" class="input" type="password" inputmode="numeric" placeholder="Nhập mật khẩu" required />
+              </label>
+
+              <div class="row" style="justify-content:flex-end">
+                <button id="btnConfirmCancel" class="btn btn--ghost" type="button">Hủy</button>
+                <button class="btn btn--primary" type="submit">Xác nhận</button>
+              </div>
+              <div id="confirmError" class="error" aria-live="polite"></div>
+            </form>
+          </div>
+        </dialog>
+      </section>
+
+      <footer class="footer muted">
+        Made with love.
+      </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
