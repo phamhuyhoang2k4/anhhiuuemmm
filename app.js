@@ -64,6 +64,13 @@ const els = {
   redeemStatus: document.getElementById("redeemStatus"),
   redemptionList: document.getElementById("redemptionList"),
 
+  addProductForm: document.getElementById("addProductForm"),
+  prodName: document.getElementById("prodName"),
+  prodCost: document.getElementById("prodCost"),
+  prodIcon: document.getElementById("prodIcon"),
+  prodImage: document.getElementById("prodImage"),
+  addProductStatus: document.getElementById("addProductStatus"),
+
   confirmDialog: document.getElementById("confirmDialog"),
   confirmTitle: document.getElementById("confirmTitle"),
   confirmDesc: document.getElementById("confirmDesc"),
@@ -93,6 +100,8 @@ const SHOP_ITEMS = [
   { id: "song", icon: "🎵", name: "1 bài hát", cost: 1000 },
   { id: "kiss", icon: "💋", name: "1 nụ hun", cost: 2000 },
 ];
+
+let shopItemsCache = null;
 
 function ymdLocal(d = new Date()) {
   const x = new Date(d);
@@ -143,6 +152,56 @@ function getRedemptions() {
 
 function setRedemptions(arr) {
   writeJson(LS_REDEMPTIONS, arr);
+}
+
+async function listShopItemsFromDb() {
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from("love_shop_items")
+    .select("id, name, icon, cost, image_url, created_at")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function addShopItemToDb(payload) {
+  if (!sb) throw new Error("Supabase chưa cấu hình");
+  const { error } = await sb.from("love_shop_items").insert(payload);
+  if (error) throw error;
+}
+
+function normalizeShopItems(items) {
+  const arr = Array.isArray(items) ? items : [];
+  return arr
+    .map((it) => {
+      const id = it?.id ?? it?.itemId ?? it?.name;
+      const cost = Math.max(0, Math.floor(Number(it?.cost) || 0));
+      return {
+        id: String(id ?? crypto.randomUUID()),
+        name: String(it?.name || "Sản phẩm"),
+        icon: String(it?.icon || ""),
+        cost,
+        imageUrl: it?.image_url || it?.imageUrl || "",
+      };
+    })
+    .filter((x) => x.cost >= 0);
+}
+
+async function loadShopItems() {
+  if (!sb) {
+    shopItemsCache = normalizeShopItems(SHOP_ITEMS);
+    return shopItemsCache;
+  }
+
+  try {
+    const dbItems = await listShopItemsFromDb();
+    const normalized = normalizeShopItems(dbItems);
+    shopItemsCache = normalized.length ? normalized : normalizeShopItems(SHOP_ITEMS);
+    return shopItemsCache;
+  } catch {
+    shopItemsCache = normalizeShopItems(SHOP_ITEMS);
+    return shopItemsCache;
+  }
 }
 
 async function fetchPointsStateFromDb() {
@@ -221,11 +280,16 @@ function renderCheckinDay() {
 
 function renderShop() {
   if (!els.shopList) return;
+  const items = shopItemsCache?.length ? shopItemsCache : normalizeShopItems(SHOP_ITEMS);
   els.shopList.innerHTML = "";
-  for (const it of SHOP_ITEMS) {
+  for (const it of items) {
     const row = document.createElement("div");
     row.className = "shop__row";
+    const img = it.imageUrl
+      ? `<div class="shop__imgWrap"><img class="shop__img" src="${escapeHtml(it.imageUrl)}" alt="product" loading="lazy" /></div>`
+      : "";
     row.innerHTML = `
+      ${img}
       <div class="shop__meta">
         <div class="shop__title"><span class="shop__icon">${escapeHtml(it.icon || "")}</span>${escapeHtml(it.name)}</div>
         <div class="shop__price">${formatPoints(it.cost)} điểm</div>
@@ -318,7 +382,8 @@ function redeemSelected() {
     const id = inp.getAttribute("data-shop-qty");
     const qty = Math.max(0, Math.floor(Number(inp.value) || 0));
     if (!qty) continue;
-    const item = SHOP_ITEMS.find((x) => x.id === id);
+    const source = shopItemsCache?.length ? shopItemsCache : normalizeShopItems(SHOP_ITEMS);
+    const item = source.find((x) => String(x.id) === String(id));
     if (!item) continue;
     picks.push({ item, qty });
   }
@@ -340,8 +405,8 @@ function redeemSelected() {
   const toAdd = [];
   for (const p of picks) {
     toAdd.push({
-      id: `${p.item.id}_${crypto.randomUUID()}`,
-      itemId: p.item.id,
+      id: `${String(p.item.id)}_${crypto.randomUUID()}`,
+      itemId: String(p.item.id),
       name: p.item.name,
       qty: p.qty,
       spent: p.item.cost * p.qty,
@@ -764,6 +829,13 @@ async function refreshAll() {
   }
 
   try {
+    await loadShopItems();
+    renderShop();
+  } catch {
+    // ignore
+  }
+
+  try {
     await syncPointsStateFromDbOnce();
     renderCheckinShopAll();
   } catch (e) {
@@ -962,6 +1034,43 @@ function wireEvents() {
     }
   });
 
+  els.addProductForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!sb) return setStatus(els.addProductStatus, "Chưa cấu hình Supabase", "danger");
+
+    const name = (els.prodName?.value || "").trim();
+    const icon = (els.prodIcon?.value || "").trim();
+    const cost = Math.max(0, Math.floor(Number(els.prodCost?.value) || 0));
+    const file = els.prodImage?.files?.[0] || null;
+
+    if (!name) return setStatus(els.addProductStatus, "Nhập tên sản phẩm trước nha", "danger");
+    if (!Number.isFinite(cost) || cost < 0) return setStatus(els.addProductStatus, "Giá điểm không hợp lệ", "danger");
+
+    const ok = await requestConfirmMatch(DELETE_PASSCODE, { title: "Thêm sản phẩm", desc: "Nhập mật khẩu để thêm sản phẩm" });
+    if (!ok) return;
+
+    try {
+      setStatus(els.addProductStatus, "Đang thêm...", "muted");
+      let imageUrl = "";
+      if (file) {
+        const up = await uploadToBucket(PHOTOS_BUCKET, file);
+        imageUrl = up.publicUrl || "";
+      }
+
+      await addShopItemToDb({ name, icon: icon || null, cost, image_url: imageUrl || null });
+      await loadShopItems();
+      renderShop();
+
+      if (els.prodName) els.prodName.value = "";
+      if (els.prodCost) els.prodCost.value = "";
+      if (els.prodIcon) els.prodIcon.value = "";
+      if (els.prodImage) els.prodImage.value = "";
+      setStatus(els.addProductStatus, "Đã thêm sản phẩm!", "ok");
+    } catch (err) {
+      setStatus(els.addProductStatus, supaErrMsg(err), "danger");
+    }
+  });
+
   // Event delegation: delete diary/photo/message
   els.diaryList?.addEventListener("click", async (e) => {
     const btn = e.target?.closest?.("[data-action='delete-diary']");
@@ -1074,6 +1183,10 @@ function wireEvents() {
       setStatus(els.photoStatus, "Đang upload...", "muted");
       const up = await uploadToBucket(PHOTOS_BUCKET, file);
       await addPhotoItem({ caption: (els.photoCaption.value || "").trim(), file_path: up.path, public_url: up.publicUrl });
+
+      setPoints(getPoints() + 50);
+      renderPoints();
+
       els.photoFile.value = "";
       els.photoCaption.value = "";
       setStatus(els.photoStatus, "Đã up ảnh!", "ok");
@@ -1140,7 +1253,7 @@ function boot() {
   wireEvents();
   switchTab("diary");
 
-  renderCheckinShopAll();
+  loadShopItems().finally(() => renderCheckinShopAll());
 
   try {
     setCustomCursorFromImage("./z7574744147805_ab6b33bf96bfb0962ffc056b20edb4a9.jpg");
