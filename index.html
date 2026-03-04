@@ -194,6 +194,42 @@
               <div class="item">
                 <div class="item__top">
                   <div>
+                    <div class="item__title">Thêm sản phẩm</div>
+                    <div class="muted">Cần nhập mật khẩu để thêm, sản phẩm sẽ đồng bộ lên database</div>
+                  </div>
+                </div>
+
+                <form id="addProductForm" class="stack" autocomplete="off">
+                  <div class="row">
+                    <label class="field" style="flex:1">
+                      <span class="field__label">Tên sản phẩm</span>
+                      <input id="prodName" class="input" placeholder="VD: 1 bó hoa" required />
+                    </label>
+                    <label class="field" style="min-width: 200px">
+                      <span class="field__label">Giá (điểm)</span>
+                      <input id="prodCost" class="input" type="number" min="0" step="1" inputmode="numeric" placeholder="VD: 3000" required />
+                    </label>
+                  </div>
+
+                  <div class="row">
+                    <label class="field" style="min-width: 200px">
+                      <span class="field__label">Icon (emoji)</span>
+                      <input id="prodIcon" class="input" placeholder="VD: 🌷" />
+                    </label>
+                    <label class="field" style="flex:1">
+                      <span class="field__label">Ảnh sản phẩm (tuỳ chọn)</span>
+                      <input id="prodImage" class="input" type="file" accept="image/*" />
+                    </label>
+                    <button class="btn btn--primary" type="submit">Thêm</button>
+                  </div>
+
+                  <div id="addProductStatus" class="status" aria-live="polite"></div>
+                </form>
+              </div>
+
+              <div class="item">
+                <div class="item__top">
+                  <div>
                     <div class="item__title">Đang giao quà</div>
                     <div class="muted">Lịch sử đổi quà (tên quà, ngày giờ đổi, điểm đã trừ)</div>
                   </div>
